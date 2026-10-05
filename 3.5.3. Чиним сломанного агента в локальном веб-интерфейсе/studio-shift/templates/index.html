@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Studio Shift</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='styles.css') }}"
+    >
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="header-inner">
+        <a class="brand" href="{{ url_for('index') }}">
+          <span class="brand-mark" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+          <span>
+            <strong>Studio Shift</strong>
+            <small>Рабочая смена площадки</small>
+          </span>
+        </a>
+        <span class="environment-status">
+          <span class="status-dot" aria-hidden="true"></span>
+          Локальный контур
+        </span>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <section class="summary" aria-label="Сводка смены">
+        <div>
+          <span class="summary-value">{{ open_tasks|length }}</span>
+          <span class="summary-label">Открыто</span>
+        </div>
+        <div>
+          <span class="summary-value">{{ high_priority_count }}</span>
+          <span class="summary-label">Высокий приоритет</span>
+        </div>
+        <div>
+          <span class="summary-value">{{ completed_tasks|length }}</span>
+          <span class="summary-label">Завершено</span>
+        </div>
+      </section>
+
+      <div class="workspace-grid">
+        <aside class="control-column">
+          <section class="tool-panel">
+            <div class="section-heading">
+              <p class="section-kicker">Координатор</p>
+              <h1>Команда смене</h1>
+            </div>
+            <p class="panel-copy">
+              Опишите, что нужно проверить, добавить или завершить. Координатор
+              выполнит только действие, которое подтверждается на доске.
+            </p>
+            <form action="{{ url_for('agent_command') }}" method="post">
+              <label for="command">Команда</label>
+              <textarea
+                id="command"
+                name="command"
+                rows="5"
+                placeholder="Покажи открытые задачи в Демо-зоне"
+                maxlength="240"
+                required
+              ></textarea>
+              <button class="button button-secondary" type="submit">
+                Выполнить
+              </button>
+            </form>
+            <div class="prompt-examples" aria-label="Примеры команд">
+              <span>Например:</span>
+              <p>«Покажи открытые задачи в Демо-зоне»</p>
+              <p>«Добавь задачу проверить USB-C адаптер в Демо-зоне с высоким приоритетом»</p>
+              <p>«Заверши SS-102»</p>
+            </div>
+
+            {% if agent_result %}
+              <div class="agent-result" aria-live="polite">
+                <p class="agent-result-label">Ответ координатора</p>
+                <h3>{{ agent_result.title }}</h3>
+                <p>{{ agent_result.message }}</p>
+              </div>
+            {% endif %}
+          </section>
+
+          <section class="tool-panel trace-panel">
+            <div class="section-heading">
+              <p class="section-kicker">Наблюдение</p>
+              <h2>Безопасная трасса</h2>
+            </div>
+            <p class="panel-copy">
+              Здесь остаются только технические этапы и результаты действий,
+              без текста команд и настроек доступа.
+            </p>
+            {% if traces %}
+              <ol class="trace-list">
+                {% for trace in traces %}
+                  <li>
+                    <span class="trace-phase">{{ trace.phase }}</span>
+                    {% if trace.tool_name %}
+                      <code>{{ trace.tool_name }}</code>
+                    {% endif %}
+                    <span class="trace-outcome">{{ trace.outcome }}</span>
+                  </li>
+                {% endfor %}
+              </ol>
+            {% else %}
+              <p class="trace-empty">После первой команды здесь появятся этапы выполнения.</p>
+            {% endif %}
+          </section>
+        </aside>
+
+        <section class="task-board">
+          <div class="board-heading">
+            <div>
+              <p class="section-kicker">Площадка сегодня</p>
+              <h2>Задачи смены</h2>
+            </div>
+            <span class="board-count">{{ open_tasks|length }} в работе</span>
+          </div>
+
+          {% if open_tasks %}
+            <div class="task-list">
+              {% for task in open_tasks %}
+                <article class="task-card">
+                  <div class="task-card-topline">
+                    <span class="task-id">{{ task.id }}</span>
+                    <span
+                      class="priority priority-{{ 'high' if task.priority == 'Высокий' else 'normal' }}"
+                    >
+                      {{ task.priority }}
+                    </span>
+                  </div>
+                  <h3>{{ task.title }}</h3>
+                  <p class="task-zone">{{ task.zone }}</p>
+                  <p class="task-status">В работе</p>
+                </article>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="empty-state">
+              <strong>Смена подготовлена</strong>
+              <p>Открытых задач нет.</p>
+            </div>
+          {% endif %}
+
+          <div class="completed-heading">
+            <h2>Завершено</h2>
+            <span>{{ completed_tasks|length }}</span>
+          </div>
+          <div class="completed-list">
+            {% for task in completed_tasks %}
+              <article class="completed-row">
+                <span class="complete-mark" aria-hidden="true">✓</span>
+                <div>
+                  <h3>{{ task.title }}</h3>
+                  <p>{{ task.id }} · {{ task.zone }}</p>
+                </div>
+              </article>
+            {% endfor %}
+          </div>
+        </section>
+      </div>
+    </main>
+  </body>
+</html>
